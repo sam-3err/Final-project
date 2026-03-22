@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+  
+
+  /* Transparent Project Items */
+  .project-item {
+    padding: 20px;
+    margin: 12px 0;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .project-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+
+  /* Enhanced Stat Cards (keep gradient but add glass effect) */
+  .stat-card {
+    padding: 28px 20px;
+    border-radius: 16px;
+    margin: 8px 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+  }
+
+  /* Form Elements for Glass Effect */
+  .card input, 
+  .card select, 
+  .card textarea {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+  }
+
+  .card input:focus,
+  .card select:focus,
+  .card textarea:focus {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(102, 126, 234, 0.6);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+  }
+
+  /* Readable Text on Glass */
+  .card h3 {
+    color: #1a202c;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  /* Messages */
+  .error {
+    color: #e53e3e;
+    background: rgba(254, 215, 215, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin: 16px 0;
+    border-left: 4px solid #e53e3e;
+    border: 1px solid rgba(229, 62, 62, 0.3);
+  }
+
+  .success {
+    color: #38a169;
+    background: rgba(198, 246, 213, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin: 16px 0;
+    border-left: 4px solid #38a169;
+    border: 1px solid rgba(56, 161, 105, 0.3);
+  }
+
+  /* Team Stats Grid Enhancement */
+  #teamStats > div {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .card {
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .project-item {
+      padding: 16px;
+    }
+    
+    #teamStats > div {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+</style>
+
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Project Manager</h1>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalProjects">0</div>
+        <div>Total Projects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="activeProjects">0</div>
+        <div>Active Projects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="teamTasks">0</div>
+        <div>Team Tasks</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>➕ Create Project</h3>
+      <form id="createProjectForm">
+        <input type="text" id="projName" placeholder="Project Name" required>
+        <textarea id="projDesc" placeholder="Description" rows="2" required></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input type="date" id="projStart" required>
+          <input type="date" id="projEnd" required>
+        </div>
+        <select id="projStatus">
+          <option value="PLANNED">Planned</option>
+          <option value="ACTIVE">Active</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
+        <button type="submit" class="btn">Create Project</button>
+      </form>
+      <div id="projectMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>➕ Create & Assign Task</h3>
+      <form id="createTaskForm">
+        <input type="text" id="taskTitle" placeholder="Task Title" required>
+        <textarea id="taskDesc" placeholder="Description" rows="2" required></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <input type="date" id="taskDue" required>
+          <input type="number" id="assignUser" placeholder="User ID" required>
+          <input type="number" id="taskProj" placeholder="Project ID" required>
+        </div>
+        <button type="submit" class="btn btn-secondary">Assign Task</button>
+      </form>
+      <div id="taskMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>📊 My Projects</h3>
+      <div id="projectsList">Loading projects...</div>
+    </div>
+
+    <div class="card">
+      <h3>📈 Team Performance</h3>
+      <div id="teamStats">Loading stats...</div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+
+    if (typeof getUserRole === 'undefined' || getUserRole() !== 'MANAGER') {
+      alert('Manager access only!');
+      location.href = 'index.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log(' Loading Manager Dashboard...');
+      await loadManagerDashboard();
+      setupForms();
+    });
+
+    async function loadManagerDashboard() {
+      try {
+        const [projStatsRes, projectsRes, tasksRes] = await Promise.all([
+          fetch(`${API_URL}projects/dashboard/`, {headers: getAuthHeaders()}),
+          fetch(`${API_URL}projects/`, {headers: getAuthHeaders()}),
+          fetch(`${API_URL}tasks/`, {headers: getAuthHeaders()})
+        ]);
+
+        if (!projStatsRes.ok || !projectsRes.ok || !tasksRes.ok) {
+          throw new Error(`API Error: ${projStatsRes.status}`);
+        }
+
+        const projStats = await projStatsRes.json();
+        const projects = await projectsRes.json();
+        const tasksData = await tasksRes.json();
+
+       
+        document.getElementById('totalProjects').textContent = projStats.total_projects || 0;
+        document.getElementById('activeProjects').textContent = projStats.active_projects || 0;
+        
+       const projectsList = document.getElementById('projectsList');
+const projectData = projects.data || projects || [];
+if (Array.isArray(projectData) && projectData.length > 0) {
+  projectsList.innerHTML = projectData.map(p => `
+    <div class="project-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <strong>${p.name}</strong> 
+          <span style="color: ${p.status === 'ACTIVE' ? 'green' : p.status === 'COMPLETED' ? 'blue' : 'orange'}">(${p.status})</span>
+          <br>${p.description?.slice(0,50)}...
+          <br><small>${p.start_date} → ${p.end_date}</small>
+        </div>
+        <select class="status-select" onchange="updateProjectStatus(${p.id}, this.value)">
+          <option value="PLANNED" ${p.status==='PLANNED'?'selected':''}>Planned</option>
+          <option value="ACTIVE" ${p.status==='ACTIVE'?'selected':''}>Active</option>
+          <option value="COMPLETED" ${p.status==='COMPLETED'?'selected':''}>Completed</option>
+        </select>
+      </div>
+    </div>
+  `).join('');
+} else {
+  projectsList.innerHTML = 'No projects yet. Create one! 🚀';
+}
+
+        const taskList = Array.isArray(tasksData.data) ? tasksData.data : 
+                          Array.isArray(tasksData) ? tasksData : [];
+        const stats = {
+          total: taskList.length,
+          done: taskList.filter(t => t?.status === 'COMPLETED').length,
+          pending: taskList.filter(t => t?.status === 'PENDING').length
+        };
+        
+        document.getElementById('teamTasks').textContent = stats.total;
+        document.getElementById('teamStats').innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px">
+            <div class="stat-card"><div>${stats.total}</div><div>Total</div></div>
+            <div class="stat-card"><div style="color:#28a745;">${stats.done}</div><div>Done</div></div>
+            <div class="stat-card"><div style="color:orange;">${stats.pending}</div><div>Pending</div></div>
+          </div>
+        `;
+        
+      } catch (error) {
+        console.error('❌ Dashboard error:', error);
+        document.getElementById('projectsList').innerHTML = 
+          `<div class="error">❌ ${error.message}. <br>Check token & backend.</div>`;
+      }
+    }
+
+    function setupForms() {
+      document.getElementById('createProjectForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const messageDiv = document.getElementById('projectMessage');
+        
+        try {
+          const formData = {
+            name: document.getElementById('projName').value.trim(),
+            description: document.getElementById('projDesc').value.trim(),
+            start_date: document.getElementById('projStart').value,
+            end_date: document.getElementById('projEnd').value,
+            status: document.getElementById('projStatus').value
+          };
+
+          const response = await fetch(`${API_URL}projects/create/`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData)
+          });
+
+          const result = await response.json();
+          
+          if (response.ok) {
+            document.getElementById('projectMessage').innerHTML = 
+              '<div class="success">✅ Project created! Reloading...</div>';
+            document.getElementById('createProjectForm').reset();
+            setTimeout(loadManagerDashboard, 1500);
+          } else {
+            document.getElementById('projectMessage').innerHTML = 
+              `<div class="error">❌ ${result.error || result.message || 'Failed'}</div>`;
+          }
+        } catch (error) {
+          console.error('Project error:', error);
+          document.getElementById('projectMessage').innerHTML = 
+            '<div class="error">❌ Network error</div>';
+        }
+      };
+
+      document.getElementById('createTaskForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+          title: document.getElementById('taskTitle').value.trim(),
+          description: document.getElementById('taskDesc').value.trim(),
+          priority: 'MEDIUM',
+          due_date: document.getElementById('taskDue').value,
+          assigned_user: parseInt(document.getElementById('assignUser').value),
+          project: parseInt(document.getElementById('taskProj').value)
+        };
+        
+        console.log("📤 SENDING TASK:", formData);
+        
+        try {
+          const response = await fetch(`${API_URL}tasks/create/`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData)
+          });
+          
+          const result = await response.json();
+          console.log("📥 TASK RESPONSE:", result);
+          
+          if (response.ok) {
+            document.getElementById('taskMessage').innerHTML = 
+              '<div class="success">✅ Task assigned successfully!</div>';
+            document.getElementById('createTaskForm').reset();
+            setTimeout(loadManagerDashboard, 1000);
+          } else {
+            document.getElementById('taskMessage').innerHTML = 
+              `<div class="error">❌ ${result.details || result.error || 'Failed'}</div>`;
+          }
+        } catch (error) {
+          console.error('Task error:', error);
+          document.getElementById('taskMessage').innerHTML = 
+            '<div class="error">❌ Network error</div>';
+        }
+      };
+
+      document.getElementById('logoutBtn').onclick = () => {
+        if (confirm('Logout?')) {
+          localStorage.clear();
+          location.href = 'index.html';
+        }
+      };
+    }
+    async function updateProjectStatus(projectId, newStatus) {
+  try {
+    // Get CSRF token from cookies
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    const response = await fetch(`${API_URL}projects/update/${projectId}/`, {
+      method: 'PATCH',
+      headers: {
+        ...getAuthHeaders(),  // Your existing auth headers
+        'X-CSRFToken': csrftoken,  // ← ADD THIS LINE
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    
+    if (response.ok) {
+      loadManagerDashboard(); // Refresh
+      console.log('✅ Status updated!');
+    } else {
+      console.error('❌ Failed:', response.status, await response.text());
+    }
+  } catch (error) {
+    console.error('❌ Network error:', error);
+  }
+}
+
+
+  </script>
+</body>
+</html>
