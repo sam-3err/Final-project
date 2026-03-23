@@ -1,0 +1,8 @@
+Task Manager - SOLID Architecture
+[ [ [| Principle               | Implementation                                            |
+| ----------------------- | --------------------------------------------------------- |
+| S Single Responsibility | views.py (HTTP), services.py (Business), models.py (Data) |
+| O Open/Closed           | Extensible TaskService & AuthService interfaces           |
+| L Liskov Substitution   | Repository pattern - Django ORM ↔ Mock repos              |
+| I Interface Segregation | ITaskRead vs ITaskWrite focused interfaces                |
+| D Dependency Inversion  | Services depend on abstractions (ITaskRepository)         |
