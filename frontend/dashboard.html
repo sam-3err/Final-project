@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - Task Manager</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Perfect Card Typography & Layout */
+    .task-item {
+      padding: 28px;
+      border: 2px solid #e8ecf4;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      background: #ffffff;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .task-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: linear-gradient(180deg, #667eea, #764ba2);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .task-item:hover {
+      border-color: #667eea;
+      box-shadow: 0 20px 40px rgba(102,126,234,0.15);
+      transform: translateY(-4px);
+    }
+
+    .task-item:hover::before {
+      opacity: 1;
+    }
+
+    .task-content {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    /* Perfect Task Title */
+    .task-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 12px 0;
+      line-height: 1.3;
+    }
+
+    /* Perfect Task Description */
+    .task-description {
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 0 0 20px 0;
+      max-height: 3.2em;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+
+    /* Perfect Task Meta Layout */
+    .task-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid #f1f5f9;
+      margin-top: 16px;
+    }
+
+    .task-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 14px;
+      color: #718096;
+      font-weight: 500;
+    }
+
+    .task-deadline {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    /* Perfect Status Select */
+    .status-select {
+      padding: 12px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fafbff;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 160px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .status-select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+      background: white;
+      transform: translateY(-1px);
+    }
+
+    /* Perfect Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      padding: 20px 0;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .status-tab {
+      padding: 12px 28px;
+      border: 2px solid #e2e8f0;
+      background: #fafbff;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .status-tab.active,
+    .status-tab:hover {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-color: #667eea;
+      box-shadow: 0 8px 25px rgba(102,126,234,0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Card Header */
+    .card h3 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0 0 0px 0;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 60px 40px;
+      color: #94a3b8;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: 0.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .task-content {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .task-meta {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      
+      .status-select {
+        width: 100%;
+      }
+      
+      .filter-tabs {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+    }
+    .comments-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fafbff;
+  margin: 16px 0;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+}
+
+.existing-comments {
+  font-size: 13px;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>👤 My Tasks Dashboard</h1>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+    </div>
+
+    <!-- Personal Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalTasks">0</div>
+        <div>Total Assigned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="completedTasks">0</div>
+        <div>✅ Completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="pendingTasks">0</div>
+        <div>⏳ Pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="inProgressTasks">0</div>
+        <div>⚡ In Progress</div>
+      </div>
+    </div>
+
+    <!-- Assigned Tasks with Filters -->
+    <div class="card">
+      <h3>📋 My Assigned Tasks</h3>
+      
+      <!-- Status Filter Tabs -->
+      <div class="filter-tabs">
+        <button class="status-tab active" data-status="all">All Tasks</button>
+        <button class="status-tab" data-status="PENDING">⏳ Pending</button>
+        <button class="status-tab" data-status="IN_PROGRESS">⚡ In Progress</button>
+        <button class="status-tab" data-status="COMPLETED">✅ Completed</button>
+      </div>
+      
+      <div id="tasksList">Loading your tasks...</div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    let allTasks = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (getUserRole() !== 'USER') {
+        window.location.href = getUserRole() === 'MANAGER' ? 'manager.html' : 'admin.html';
+        return;
+      }
+      
+      setupFilterTabs();
+      loadUserTasks();
+      
+      document.getElementById('logoutBtn').onclick = function() {
+        localStorage.clear();
+        window.location.href = 'index.html';
+      };
+    });
+
+    function setupFilterTabs() {
+      document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.onclick = function() {
+          document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          displayFilteredTasks(this.dataset.status);
+        };
+      });
+    }
+
+   async function loadUserTasks() {
+  try {
+    const response = await fetch(`${API_URL}tasks/?assigned_to=${getUserId()}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const tasksData = await response.json();
+    console.log('🔥 RAW TASKS:', tasksData);  // Should show array
+    
+    allTasks = Array.isArray(tasksData) ? tasksData : (tasksData.data || []);
+    console.log('📋 TASK COMMENTS:', allTasks[0]?.comments?.length || 0);
+    
+    updateStats();
+    displayFilteredTasks('all');
+  } catch (error) {
+    console.error('Load error:', error);
+    document.getElementById('tasksList').innerHTML = 
+      '<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error loading tasks</h3></div>';
+  }
+}
+
+
+    function updateStats() {
+      const total = allTasks.length;
+      const pending = allTasks.filter(t => t.status === 'PENDING').length;
+      const inProgress = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
+      const completed = allTasks.filter(t => t.status === 'COMPLETED').length;
+      
+      document.getElementById('totalTasks').textContent = total;
+      document.getElementById('pendingTasks').textContent = pending;
+      document.getElementById('completedTasks').textContent = completed;
+      document.getElementById('inProgressTasks').textContent = inProgress;
+    }
+
+   function displayFilteredTasks(statusFilter) {
+  const tasksList = document.getElementById('tasksList');
+  
+  if (allTasks.length === 0) {
+    tasksList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚀</div><h3>No tasks assigned</h3><p>Your manager will assign tasks soon</p></div>';
+    return;
+  }
+  
+  let filteredTasks = statusFilter === 'all' ? allTasks : 
+    allTasks.filter(task => task.status === statusFilter);
+  
+  if (filteredTasks.length === 0) {
+    tasksList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><h3>No tasks in this status</h3></div>';
+    return;
+  }
+  
+  tasksList.innerHTML = filteredTasks.map(task => `
+    <div class="task-item">
+      <div class="task-content">
+        <h4 class="task-title">${task.title}</h4>
+        <p class="task-description">${task.description?.slice(0,120) || 'No description provided'}...</p>
+        
+        <!-- Comments Section -->
+        <div class="comments-section" style="margin-bottom: 16px;">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <span style="font-size:14px;color:#718096;">💬 Comments</span>
+            <span style="font-size:12px;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:12px;">
+              ${task.comments?.length || 0}
+            </span>
+          </div>
+          
+          <!-- Existing Comments -->
+          <div class="existing-comments" style="max-height:80px;overflow-y:auto;margin-bottom:12px;padding:8px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+            ${task.comments && task.comments.length > 0 ? 
+              task.comments.slice(-3).map(c => `
+                <div style="font-size:13px;color:#64748b;margin-bottom:4px;">
+                  <strong>${c.author || 'Anonymous'}</strong>: ${c.text}
+                  <small style="color:#94a3b8;"> · ${new Date(c.created_at).toLocaleDateString()}</small>
+                </div>
+              `).join('') : 
+              '<div style="color:#94a3b8;font-style:italic;">No comments yet...</div>'
+            }
+          </div>
+          
+          <!-- Add New Comment -->
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="comment-input" 
+                   placeholder="Add a comment..." 
+                   onkeypress="handleCommentKeypress(event, ${task.id})"
+                   style="flex:1;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;">
+            <button class="btn" onclick="addTaskComment(${task.id})" 
+                    style="padding:8px 16px;font-size:13px;">Post</button>
+          </div>
+        </div>
+
+        <div class="task-meta">
+          <div class="task-details">
+            <div class="task-deadline">📅 Due: ${task.due_date || 'No deadline'}</div>
+          </div>
+          <select class="status-select" onchange="updateTaskStatus(${task.id}, this.value)">
+            <option value="PENDING" ${task.status==='PENDING'?'selected':''}>⏳ Pending</option>
+            <option value="IN_PROGRESS" ${task.status==='IN_PROGRESS'?'selected':''}>⚡ In Progress</option>
+            <option value="COMPLETED" ${task.status==='COMPLETED'?'selected':''}>✅ Completed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+    async function updateTaskStatus(taskId, newStatus) {
+      try {
+        const response = await fetch(`${API_URL}tasks/update/${taskId}/`, {
+          method: 'PATCH',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (response.ok) {
+          loadUserTasks();
+        } else {
+          alert('Failed to update task status');
+        }
+      } catch (error) {
+        console.error('Update error:', error);
+      }
+    }
+    // Handle Enter key in comment input
+function handleCommentKeypress(event, taskId) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    addTaskComment(taskId);
+  }
+}
+
+// Add comment to task
+async function addTaskComment(taskId) {
+  const commentInput = document.querySelector(`[onkeypress="handleCommentKeypress(event, ${taskId})"]`);
+  const commentText = commentInput.value.trim();
+  
+  if (!commentText) {
+    alert('Please enter a comment');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}tasks/${taskId}/comment/`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        text: commentText,
+        author: localStorage.getItem('userName') || 'Anonymous'
+      })
+    });
+
+    if (response.ok) {
+      commentInput.value = ''; // Clear input
+      loadUserTasks(); // Refresh tasks with new comment
+      console.log('✅ Comment added!');
+    } else {
+      alert('Failed to add comment');
+    }
+  } catch (error) {
+    console.error('Comment error:', error);
+    alert('Network error adding comment');
+  }
+}
+
+  </script>
+</body>
+</html>

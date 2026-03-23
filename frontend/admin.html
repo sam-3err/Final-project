@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .project-item, .user-item {
+      padding: 20px;
+      border: 1px solid #e8ecf4;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      background: #fafbff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    .project-item:hover, .user-item:hover {
+      border-color: #667eea;
+      box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+    }
+    .btn-sm { 
+      padding: 8px 16px; 
+      font-size: 13px; 
+      min-width: 80px;
+    }
+    #userSearch { 
+      width: 100%; 
+      padding: 12px 20px; 
+      border: 2px solid #e2e8f0; 
+      border-radius: 12px; 
+      margin-bottom: 20px;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    #userSearch:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+    }
+    .loading { text-align: center; padding: 40px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 Admin Control Panel</h1>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+    </div>
+
+    <!-- System Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalUsers">-</div>
+        <div>Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="admins">-</div>
+        <div>Admins</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="managers">-</div>
+        <div>Managers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="userCount">-</div>
+        <div>Team Members</div>
+      </div>
+    </div>
+
+    <!-- Manage Users -->
+    <div class="card">
+      <h3>👥 Manage Users</h3>
+      <input type="text" id="userSearch" placeholder="🔍 Search users by name or email..." onkeyup="filterUsers()">
+      <div id="usersList" class="loading">Loading users...</div>
+    </div>
+
+    <!-- System Stats -->
+    <div class="card">
+      <h3>📊 System Usage</h3>
+      <div id="systemStats" class="loading">Loading stats...</div>
+    </div>
+
+    <!-- Projects Management - FIXED -->
+    <div class="card">
+      <h3>🏢 Manage Projects</h3>
+      <div id="adminProjects" class="loading">Loading projects...</div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    if (getUserRole() !== 'ADMIN') location.href = 'index.html';
+    
+    document.addEventListener('DOMContentLoaded', loadAdminData);
+
+    async function loadAdminData() {
+      try {
+        console.log('🔄 Loading admin dashboard...');
+        
+        const [usersRes, projRes, taskRes] = await Promise.all([
+          fetch(`${API_URL}users/users/`, {headers: getAuthHeaders()}).then(r=>r.json()),
+          fetch(`${API_URL}projects/`, {headers: getAuthHeaders()}).then(r=>r.json()),  // ✅ CHANGED: Use projects/ not dashboard/
+          fetch(`${API_URL}tasks/`, {headers: getAuthHeaders()}).then(r=>r.json())
+        ]);
+        
+        console.log('📊 API Responses:', {usersRes, projRes, taskRes});
+
+        // 1. User stats - SAFE ACCESS
+        const totalUsers = usersRes.count || usersRes.length || 0;
+        const adminCount = usersRes.stats?.admins || 
+                          (Array.isArray(usersRes) ? usersRes.filter(u=>u.role==='ADMIN').length : 0) || 0;
+        const managerCount = usersRes.stats?.managers || 
+                            (Array.isArray(usersRes) ? usersRes.filter(u=>u.role==='MANAGER').length : 0) || 0;
+        const userCount = totalUsers - adminCount - managerCount;
+        
+        document.getElementById('totalUsers').textContent = totalUsers;
+        document.getElementById('admins').textContent = adminCount;
+        document.getElementById('managers').textContent = managerCount;
+        document.getElementById('userCount').textContent = userCount;
+
+        // 2. Users list - SAFE ACCESS
+        const usersList = usersRes.users || usersRes.data || usersRes;
+        document.getElementById('usersList').innerHTML = Array.isArray(usersList) ? 
+          usersList.map(u=>`
+            <div class="user-item">
+              <div>
+                <strong>${u.name || u.username || 'N/A'}</strong> 
+                <span style="color:#667eea;padding-left:12px;font-weight:500;">${u.role}</span>
+                <br><small style="color:#94a3b8;">${u.email || 'No email'}</small>
+              </div>
+              <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">🗑️ Delete</button>
+            </div>
+          `).join('') : '<div style="text-align:center;padding:40px;color:#94a3b8;">No users found</div>';
+
+        // 3. System Stats - SAFE ACCESS
+        const totalProjects = Array.isArray(projRes) ? projRes.length : 
+                             projRes.data?.length || projRes.count || projRes.length || 0;
+        const totalTasks = Array.isArray(taskRes) ? taskRes.length : 
+                          taskRes.data?.length || taskRes.count || taskRes.length || 0;
+        const completedTasks = Array.isArray(taskRes) ? 
+                              taskRes.filter(t=>t.status==='COMPLETED').length : 0;
+        const completionRate = totalTasks ? ((completedTasks/totalTasks)*100).toFixed(1) : 0;
+        
+        document.getElementById('systemStats').innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px">
+            <div class="stat-card" style="text-align:center;">
+              <div style="font-size:36px;font-weight:800;color:#667eea">${totalProjects}</div>
+              <div style="color:#64748b;font-weight:500;">Total Projects</div>
+            </div>
+            <div class="stat-card" style="text-align:center;">
+              <div style="font-size:36px;font-weight:800;color:#10b981">${totalTasks}</div>
+              <div style="color:#64748b;font-weight:500;">Total Tasks</div>
+            </div>
+            <div class="stat-card" style="text-align:center;">
+              <div style="font-size:36px;font-weight:800;color:#28a745">${completedTasks}</div>
+              <div style="color:#64748b;font-weight:500;">Completed</div>
+            </div>
+            <div class="stat-card" style="text-align:center;">
+              <div style="font-size:36px;font-weight:800;color:#f59e0b">${completionRate}%</div>
+              <div style="color:#64748b;font-weight:500;">Completion Rate</div>
+            </div>
+          </div>
+        `;
+
+        // 4. ✅ PROJECTS FIXED - SAFE ACCESS
+        const projectsList = projRes.data || projRes.projects || projRes;
+        console.log('🏢 Projects data:', projectsList);
+        
+        document.getElementById('adminProjects').innerHTML = Array.isArray(projectsList) && projectsList.length > 0 ? 
+          projectsList.map(p=>`
+            <div class="project-item">
+              <div>
+                <strong style="color:#1e293b;">${p.name || p.title || 'Unnamed Project'}</strong>
+                <span style="color:#667eea;padding-left:12px;font-weight:500;font-size:14px;">
+                  ${p.status || 'Unknown'}
+                </span>
+                ${p.description ? `<br><small style="color:#94a3b8;">${p.description.slice(0,80)}...</small>` : ''}
+              </div>
+              <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">🗑️ Delete</button>
+            </div>
+          `).join('') : 
+          '<div style="text-align:center;padding:60px 20px;color:#94a3b8;">📭 No projects found<br><small>Create projects from Manager dashboard</small></div>';
+
+        console.log('✅ All admin data loaded successfully');
+      } catch (error) {
+        console.error('❌ Admin dashboard load failed:', error);
+        document.getElementById('adminProjects').innerHTML = 
+          '<div style="text-align:center;padding:60px;color:#ef4444;">❌ Failed to load projects<br><button class="btn" onclick="loadAdminData()" style="margin-top:12px;">Retry</button></div>';
+        document.getElementById('systemStats').innerHTML = 
+          '<div style="text-align:center;padding:40px;color:#ef4444;">Failed to load stats</div>';
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Delete this user permanently? This cannot be undone.')) return;
+      try {
+        const res = await fetch(`${API_URL}users/delete/${id}/`, { 
+          method: 'DELETE', 
+          headers: getAuthHeaders() 
+        });
+        if (res.ok) {
+          alert('✅ User deleted successfully');
+          loadAdminData();
+        } else {
+          alert('❌ Failed to delete user');
+        }
+      } catch (error) {
+        console.error('Delete user error:', error);
+        alert('❌ Network error');
+      }
+    }
+
+    async function deleteProject(id) {
+      if (!confirm('Delete this project and all associated tasks?')) return;
+      try {
+        const res = await fetch(`${API_URL}projects/delete/${id}/`, { 
+          method: 'DELETE', 
+          headers: getAuthHeaders() 
+        });
+        if (res.ok) {
+          alert('✅ Project deleted successfully');
+          loadAdminData();
+        } else {
+          alert('❌ Failed to delete project');
+        }
+      } catch (error) {
+        console.error('Delete project error:', error);
+        alert('❌ Network error');
+      }
+    }
+
+    function filterUsers() {
+      const query = document.getElementById('userSearch').value.toLowerCase();
+      document.querySelectorAll('.user-item').forEach(user => {
+        const text = user.textContent.toLowerCase();
+        user.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    }
+
+    document.getElementById('logoutBtn').onclick = () => {
+      if (confirm('Logout and clear all data?')) {
+        localStorage.clear();
+        location.href = 'index.html';
+      }
+    };
+  </script>
+</body>
+</html>
